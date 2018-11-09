@@ -1,0 +1,17 @@
+\contentsline {section}{\numberline {1}Introduction}{2}{section.1}
+\contentsline {subsection}{\numberline {1.1}Motivation}{2}{subsection.1.1}
+\contentsline {subsection}{\numberline {1.2}Our Contribution}{3}{subsection.1.2}
+\contentsline {section}{\numberline {2}Background}{4}{section.2}
+\contentsline {section}{\numberline {3}Approach}{5}{section.3}
+\contentsline {subsection}{\numberline {3.1}Vertex-based versus Edge-based}{5}{subsection.3.1}
+\contentsline {subsection}{\numberline {3.2}Synchronous versus Asynchronous}{7}{subsection.3.2}
+\contentsline {subsection}{\numberline {3.3}CPU, GPU \& Multi-GPU Code}{8}{subsection.3.3}
+\contentsline {subsection}{\numberline {3.4}Optimizations}{9}{subsection.3.4}
+\contentsline {section}{\numberline {4}Experimental Evaluation}{10}{section.4}
+\contentsline {subsection}{\numberline {4.1}Experimental Setup}{10}{subsection.4.1}
+\contentsline {subsection}{\numberline {4.2}Effect of Vertex-based versus Edge-based}{11}{subsection.4.2}
+\contentsline {subsection}{\numberline {4.3}Effect of Synchronous versus Asynchronous}{11}{subsection.4.3}
+\contentsline {subsection}{\numberline {4.4}Effect of CPU, GPU \& Multi-GPU Code}{11}{subsection.4.4}
+\contentsline {subsection}{\numberline {4.5}Effect of Optimizations}{13}{subsection.4.5}
+\contentsline {section}{\numberline {5}Related Work}{13}{section.5}
+\contentsline {section}{\numberline {6}Conclusion}{14}{section.6}
