@@ -1,0 +1,59 @@
+\section{Introduction}\label{sec:introduction}
+\subsection{Motivation}
+Graphs model several real-world phenomena such as friendship, molecular interaction and co-authorship.
+Several graph algorithms have been designed across domains to compute such relationships between entities.
+Performance of these graph algorithms has become critical today due to explosive growth of unstructured data.
+For instance, to simulate a simple physical phenomenon, an algorithm may have to work with billions of particles.
+
+On the other side, computer hardware is witnessing rapid changes with new architectural innovations.
+Exploiting these architectures demands complex coding and good compiler support.
+The demand intensifies in the presence of parallelization.
+It is not uncommon to see a twenty-line textbook graph algorithm implemented using several hundred lines of optimized parallel code.
+
+It would be ideal if the algorithm is programmed at a high-level without worrying about the nuances of the hardware.
+This gave rise to domain-specific languages (DSLs) for graph algorithms which allowed programmers to write complex algorithmic codes and took care of efficient parallel code generation~\cite{greenmarl, lighthouse, falcon}.
+Such DSLs often disallow writing arbitrary programs, trading off generality for performance.
+This makes programming parallel hardware easy, and adapting to changes manageable.
+
+An example of a graph DSL is Falcon~\cite{falcon, dhfalcon} which supports a wide variety of backends: CPU, GPU, multi-GPU, heterogeneous processing, and distributed systems. 
+It extends C language to allow graph processing being specified at a high-level.
+Falcon provides special constructs (such as worklists and reductions) for simplifying algorithm specification and also aiding efficient code generation.
+We choose Falcon because it supports a variety of backends.
+
+Unfortunately, graph algorithms do not always have a fixed performance pattern.
+The pattern varies depending upon the graph structure which is available only at runtime.
+Such an \textit{irregular} pattern poses challenges in parallelizing graph algorithms and in optimizing them for efficient execution.
+For instance, vertex-based processing works well for road networks, but social networks demand an edge-based processing.
+Sequential processing of parallel loops demands synchronous execution, but independent loops can be more efficient with asynchronous processing.
+Similarly, backend optimizations are quite different for different targets such as CPU and GPU.
+
+Falcon (and other graph DSLs) allows writing code for a particular kind of processing. % UK- this is true for other DSLs, so ours is novel as such a dsl is lacking. needs to be highlighted.
+The code written in Falcon DSL needs modifications for an alternative way of processing.
+Various syntactic elements in the program need to be changed for the alternative way. 
+Thus, code needs to be written separately for vertex-based and edge-based processing, for instance.
+While this is a step better than being totally rigid, it would be helpful if one could generate different kind of code from the \textit{same DSL specification}.
+Such a setup greatly simplifies algorithmic specification, and also allows generating code for various situations / backends / graph types from the same specification.
+
+The burden, in this setup, shifts from DSL programmer to the compiler.
+The only input that the programmer needs to specify (apart from the DSL code) is the type of processing required.
+This can be easily specified via a command-line switch (e.g., \texttt{-vertex-based}, -\texttt{synchronous}, etc.), but without needing any modifications to the code.
+This allows our compiler to generate vertex-based and edge-based graph processing code from the same algorithmic specification.
+Similarly, it allows generating synchronous and asynchronous processing code, wherein various iterations of the parallel processing are separated and not separated by a barrier respectively. % UK - synchronous and asynchronous needs expansion here. our targeted platform - multi-gpu machine needs to be mentioned.
+The compiler is also equipped to generate CPU or GPU or multi-GPU code.
+
+\subsection{Our Contribution}
+In this report, we highlight the challenges faced in keeping the specification fixed.
+In particular, we make the following contributions:
+\begin{itemize}
+\item We present a compiler which generates different implementations for the \textit{same DSL program} for an algorithm which differ in graph processing. In particular, the compiler can generate vertex-based or edge-based processing, synchronous or asynchronous codes, and CPU or GPU or multi-GPU codes.
+\item The DSL is able to manage multiple GPUs present in a multi-GPU machine by adding support for running programs in parallel which differ in algorithm or input graph.
+\item We illustrate the effectiveness of the proposed compiler using several graph algorithms and several graphs of various types. The performance of the code generated with the proposed compiler is compared against other hand-tuned as well as generated codes.
+\end{itemize}
+
+\subsection{Outline}
+The rest of the report is organized as below.
+Chapter~\ref{sec:background} provides a brief background of Falcon DSL, as our work adds facilities in it.
+Chapter~\ref{sec:approach} presents challenges faced in generating various codes from the same DSL.
+Chapter~\ref{sec:results} evaluates the effectiveness of our approach using multiple frameworks, algorithms and graphs.
+Chapter~\ref{sec:related} compares and contrasts the relevant related work,
+and Chapter~\ref{sec:conclusion} concludes.

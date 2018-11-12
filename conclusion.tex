@@ -1,0 +1,10 @@
+\section{Conclusion}\label{sec:conclusion}
+Irregular codes have data-dependent access patterns.
+Therefore, compilers need to make pessimistic assumptions leading to very conservative code.
+While DSLs for irregular codes allow us the flexibility to make more informed decisions about the domain, existing DSLs lack adaptability.
+Different graphs expect different kinds of processing to achieve the best performance.
+While existing DSLs do allow changing the algorithm specification to be changed to suit a purpose, it would be ideal if the specification remains intact and the compiler judiciously generates the necessary efficient code.
+We presented our experiences in achieving the same, for a graph DSL, Falcon.
+In particular, we auto-generated codes for vertex-based and edge-based processing, for synchronous versus asynchronous processing, and for CPU versus GPU versus multi-GPU processing.
+We illustrated the effectiveness of our techniques using a variety of algorithms and several real-world graphs.
+We believe other DSLs would also benefit from our proposal.

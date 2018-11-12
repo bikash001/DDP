@@ -1,0 +1,213 @@
+\section{Background}\label{sec:background}
+We provide a comparison of a few graph frameworks, followed by a brief background on Falcon.
+
+\subsection{Comparison of Different Graph Frameworks}
+Table~\ref{background:table1} differentiates various graph data analytic tools based on programming style, hardware support and processing style. 
+
+%GPUs and Multi-GPU machines are not rare now and GPGPU has attracted every field of computation.
+%\newline\UK{UK- words  coalesced access, SIMT, MIMD, thread divergence etc., should come here?}\newline
+ Galois~\cite{Pingali:2011:TPA:1993316.1993501} is a framework for graph algorithms.
+\REM{ works only for multi-core CPUs.} 
+It iterates over a collection  of active elements which are stored in a worklist.
+After one parallel iteration over a worklist, new active elements are generated which are stored in another worklist for next iteration.
+Program terminates when no new active elements are generated during an iteration.
+Galois supports different types of worklists. It supports dynamic algorithms, where graph structure changes at runtime.
+Green-Marl~\cite{Hong:2012:GDE:2150976.2151013} is a Graph DSL. 
+\REM{Green-Marl DSL allows programming only for multi-core CPUs.}
+The DSL supports various  data types,  parallel constructs to  iterate over graph, synchronization and reduction functions. 
+This makes programming  graph algorithms using Green-Marl DSL easy.  
+Galois and Green-Marl target multi-core CPUs and do not support \GPU devices.
+
+LonestarGPU~\cite{nasre13:MAG:2517327.2442531} framework supports  dynamic algorithms. %\UK{need to define cautious, even in Galois?} 
+It has  implementations of dynamic graph algorithms such as Delaunay
+Mesh Refinement and Survey Propagation. Static graph algorithms such as SSSP, BFS, Connected Components etc., are also programmed in LonestarGPU.
+Being a framework (and not a DSL), programming new algorithm in LonestarGPU require expertise in CUDA and  framework code. 
+Gunrock~\cite{Wang:2016:GHG:3016078.2851145} has a set of APIs to express a
+wide range of graph processing primitives on GPUs. %It also has some GPU-specific optimizations.
+It defines {\it frontiers} as a subset of edges and vertices of the graph which are actively involved
+in the computation. Gunrock defines \textsf{advance}, \textsf{filter}, and \textsf{compute} primitives which operate on
+frontiers in different ways. 
+Similar to LonestarGPU, Gunrock is a library-based framework and, relative to DSLs, programming is difficult. 
+
+Falcon~\cite{falcon} is a Graph DSL which supports \CPU, \GPU and multi-GPU machines. It supports various data types, parallelization and synchronization constructs, and reduction operations. This makes programming graph analytic algorithms easy for heterogeneous targets. Falcon also supports dynamic graph algorithms. 
+Totem~\cite{Gharaibeh:2012:YOT:2370816.2370866} is  a library-based framework consisting of benchmarks which can run on \CPU, \GPU and multi-GPU machines. Programming new algorithms in Totem is relatively tougher.
+
+\begin{table}
+\centering
+\scalebox{0.7}{
+ \begin{tabular}{|p{2.0cm}|p{1cm}| p{3.5cm}| p{3.5cm}|}
+\hline
+\small
+Tool & DSL & \shortstack {Hardware Support\\ \CPU : \GPU : multi-GPU} & \shortstack{ Iterators \\ Edge : Vertex : Worklist} \\
+\hline
+\hline
+GreenMarl & $\surd$ & $\surd$\hspace{0.08in} : $\times$\hspace{0.1in} : $\times$ & $\surd$\hspace{0.08in} : $\surd$\hspace{0.1in} : $\surd$\\
+%\hline
+Galois & $\times$ & $\surd$\hspace{0.08in} : $\times$\hspace{0.1in} : $\times$ & $\times$\hspace{0.08in} : $\times$\hspace{0.1in} : $\surd$\\
+%\hline
+Falcon & $\surd$ & $\surd$\hspace{0.08in} : $\surd$\hspace{0.1in} : $\surd$ & $\surd$\hspace{0.08in} : $\surd$\hspace{0.1in} : $\surd$\\
+%\hline
+Totem & $\times$ & $\surd$\hspace{0.08in} : $\surd$\hspace{0.1in} : $\surd$ & $\times$\hspace{0.08in} : $\times$\hspace{0.1in} : $\times$\\
+%\hline
+Gunrock & $\times$ & $\times$\hspace{0.08in} : $\surd$\hspace{0.1in} : $\times$ & $\times$\hspace{0.08in} : $\times$\hspace{0.1in} : $\surd$\\
+%\hline
+LonestarGPU & $\times$ & $\times$\hspace{0.08in} : $\surd$\hspace{0.1in} : $\times$ & $\surd$\hspace{0.08in} : $\surd$\hspace{0.1in} : $\surd$\\
+\hline
+\end{tabular}
+}
+\caption{Comparison of different graph frameworks}
+\label{background:table1}
+\end{table}
+
+As shown in  Table~\ref{background:table1}, both Green-Marl and Falcon support iteration over nodes and edges. Falcon supports multiple hardware platforms. So we have taken Falcon DSL for implementing our compilation strategies where several optimizations are performed. These optimizations are missing in any of the current graph DSL. By retaining the DSL code intact for various transformations, our compiler considerably reduces the programming effort and improves productivity.
+
+\subsection{Falcon}
+Falcon Graph DSL has data types {\tt Graph}, {\tt Point}, {\tt Edge}, {\tt Set} and {\tt Collection}. \texttt{Graph} stores a graph object, which consist of points and edges. Each {\tt Point} is stored as {\tt union} of   {\tt int} and {\tt float}.
+{\tt Edge} consist of source and destination points and  a {\it weight}. {\tt Set} is a static collection and implemented as a {\it Union-Find} data structure. The {\tt Collection} data type is dynamic and its size can vary at runtime. Elements can be added to  and deleted from a collection object at runtime.
+
+ The {\tt foreach} statement is the parallelization construct of Falcon.
+ It can be used to  iterate in different ways on different elements of graph object as  shown in Table~\ref{background:tabfalcon2}. 
+{\tt Parallel} {\tt  Sections} statement of Falcon is used to write programs which uses multiple devices of a machine at the same time. Falcon also supports reduction operations such as add ({\it RADD}) and mul ({\it RMUL}). It  has atomic library functions {\it MIN}, {\it MAX} etc., which are necessary for graph algorithms as they are {\it irregular}. 
+The synchronization primitive of Falcon DSL is {\tt single} statement.
+ It is a non-blocking lock and can be used to lock one element or a collection of elements, as shown in Table~\ref{background:tabfalcon1}.
+
+\begin{table}
+%\small
+ \small{
+\centering
+\begin{tabular}{ |l |l |l| }
+ \hline
+  Data Type &Iterator  & Description  \\
+\hline
+  Graph   &  points  &  Iterate over  all points in graph \\
+%\hline
+Graph    & edges    & Iterate over all edges in graph \\
+% \hline
+%Graph   & pptyname  & Iterate over all elements in new ppty (e.g triangles in a  mesh).\\
+%\hline
+Point   & nbrs     & Iterate over all neighboring points (Undirected {\tt Graph})\\
+%\hline
+Point   & innbrs     & Iterate over all src point of incoming edges\\
+%\hline
+Point   & outnbrs   & Iterate over dst   point of   outgoing  edges \\
+%\hline
+Set     &      & Iterate over all items in a Set \\
+%\hline
+Collection       &    & Iterate over all items in a Collection\\
+\hline
+\end{tabular}
+\caption{ {\tt foreach}  statement iterators in Falcon}
+\label{background:tabfalcon2}
+}
+\vspace{2em}
+\small{
+\centering
+
+ \begin{tabular}{|l|l|}
+ %\begin{tabular}{|p{2cm}|p{5cm}|}
+\hline
+\shortstack{ \textbf{single}(t1) \{stmt block1\}\\ \textbf{else} \{stmt block2\}}  &\shortstack{ The thread that gets a lock on  item t1\\ executes  stmt block1 and other threads\\ execute stmt block2.}\\
+\hline
+\shortstack{ \textbf{single}(coll) \{stmt block1\}\\ \textbf{else} \{stmt block2\}}  & \shortstack{The thread that gets a lock on  all elements\\ in the collection executes  stmt block1\\ and others execute stmt block2.}\\
+\hline
+ \end{tabular}
+\caption{{\tt single} statement (synchronization) in Falcon}
+\label{background:tabfalcon1}
+}
+
+\end{table}
+
+
+A graph object can be processed in multiple ways in Falcon. This leads to the flexibility of the same algorithm being specified in different ways.   A programmer can iterate over {\it edges} of a graph object and then extract the source ({\it src}) and the destination ({\it dst}) points of each edge. Another method is to iterate over all {\it points} of the graph object. 
+Then for each point, the processing can iterate over {\it outnbrs} or {\it innbrs}.
+This is illustrated in Algorithms~\ref{background:algo1} and \ref{background:algo2}.
+
+% \begin{wrapfigure}{L}{0.6\textwidth}
+\begin{figure}
+\begin{minipage}[t]{0.45\textwidth}
+\begin{algorithm}[H]
+%\begin{algorithm}[t]
+\small
+\SetKwProg{Fn}{}{ \{}{\}}
+\fontsize{8.2pt}{5pt}\selectfont{
+\SetAlgoLined
+int  changed = 0;  // Global variable \label{line:globdecl}}\\
+\Fn(){\textbf{relaxgraph}(Point  p, Graph  graph)} {
+                        \textbf{foreach} (t In p.outnbrs)\\
+        \hspace{0.05in} MIN(t.dist, p.dist + graph.getweight(p, t), changed);    \label{line:modidist}\\%uses \texttt{atomicMin()}
+}
+\Fn(){\textbf{main}(int argc, char *argv[])} {
+        Graph graph;    \\
+        graph.addPointProperty(dist, int);      \label{line:add-dist}\\
+        graph.read(argv[1]);            \label{line:readgraph}  \\
+        //make {\it dist} infinity for all points.\\
+        \textbf{foreach} (t In graph.points)t.dist=MAX\_INT;     \label{line:infinity}\\
+        graph.points[0].dist = 0;       // source has dist 0    \label{line:initsource} \\
+        \While {(1)}{     %\todo{can we avoid infinite loop}      \\
+         changed = 0;           \\\label{line:initchanged}
+                \textbf{foreach} (t In graph.points)  relaxgraph(t,graph);\label{line:relaxfun}\\
+                if (changed == 0) break;        //reached fix point\label{line:checkexit}\\
+
+        }\label{line:ssspendlopp}
+        %for (int i = 0; i \textless graph.npoints; ++i)        \label{line:printdist}\\
+        %       \hspace{0.3in}printf("i=\%d dist=\%d$\backslash$n", i, graph.points[i].dist);
+
+        }
+\caption{SSSP: iterating over Points in Falcon}
+\label{background:algo1}
+\end{algorithm}
+\end{minipage}\hfill
+% \end{wrapfigure}
+\begin{minipage}[t]{0.45\textwidth}
+\begin{algorithm}[H]
+%\begin{algorithm}[t]
+\small
+\SetKwProg{Fn}{}{ \{}{\}}
+\fontsize{8.2pt}{5pt}\selectfont{
+\SetAlgoLined
+int  changed = 0;  // Global variable \label{line:eglobdecl}}\\
+\Fn(){\textbf{relaxgraph}(Edges  e, Graph  graph)} {
+        Point (graph)p,(graph)t;\\
+    p=e.src;\\
+    t=e.dst;\\
+    MIN(t.dist, p.dist + e.weight, changed);    \label{line:emodidist}\\%uses \texttt{atomicMin()}
+}
+\Fn(){\textbf{main}(int argc, char *argv[])} {
+        Graph graph;    \\
+        graph.addPointProperty(dist, int);      \label{line:eadd-dist}\\
+        graph.read(argv[1]);            \label{line:ereadgraph}  \\
+        //make {\it dist} infinity for all points.\\
+        \textbf{foreach} (t In graph.points)t.dist=MAX\_INT;     \label{line:einfinity}\\
+        graph.points[0].dist = 0;       // source has dist 0    \label{line:einitsource} \\
+        \While {(1)}{     %\todo{can we avoid infinite loop}      \\
+         changed = 0;           \\\label{line:einitchanged}
+                \textbf{foreach} (e In graph.edges)  relaxgraph(e,graph);\label{line:erelaxfun}\\
+                if (changed == 0) break;        //reached fix point\label{line:echeckexit}\\
+
+        }\label{ssspendlopp}
+        %for (int i = 0; i \textless graph.npoints; ++i)        \label{line:printdist}\\
+        %       \hspace{0.3in}printf("i=\%d dist=\%d$\backslash$n", i, graph.points[i].dist);
+
+        }
+\caption{SSSP: iterating over Edges in Falcon}
+\label{background:algo2}
+\end{algorithm}
+\end{minipage}
+\end{figure}
+% \vspace{1em}
+\par
+Both the algorithms are for  Single Source Shortest Path (SSSP) computation. It computes shortest path from source point (point zero) to all other points in the graph object. 
+ In Algorithm~\ref{background:algo1}, the processing is done using {\it points} (Line~\ref{line:relaxfun}) and {\it outnbrs} (Line~\ref{line:modidist}) iterators. In Algorithm~\ref{background:algo2}, the computation is performed using {\it edges} (Line~\ref{line:erelaxfun}) iterator.
+ In both the algorithms all the edges $t\rightarrow p$ in the graph object are considered. Then {\it dist} value of point {\it t} is reduced to {\it Min(t.dist, p.dist+ weight($p\rightarrow t$))} using the atomic function {\it MIN}. If there is any change in the value of {\it t.dist}, the variable {\it changed} is set to one. The computation stops when the value of {\it dist} does not change for any point in the graph object. Performance of an algorithm depends on the graph structure, hardware architecture, etc.
+ Algorithm~\ref{background:algo1} may perform well over Algorithm~\ref{background:algo2} for one input graph, but may not for another, \REM{ input graph} on the same hardware architecture. This depends upon several graph properties such as variance in degree, diameter of graph, etc.
+
+Such a flexible processing is an artifact of \textit{irregular} algorithms (such as graph algorithms) wherein the data-access pattern, the control-flow pattern as well as the communication pattern is unknown at compile time, as it is dependent on the graph input.
+ Thus, it is difficult to identify which method would be suitable for an algorithm:  it depends on the graph object.
+
+The random graphs (Erd$\ddot{o}$s R$\acute{e}nyi$ model) typically perform well with iterating over {\it points}. The social and rmat graphs which follow power-law degree distribution~\cite{Gharaibeh:2012:YOT:2370816.2370866} are benefited mostly by iterating over {\it edges}, especially on \GPU devices.  Power-law degree distribution indicates huge variance in degree distribution of the vertices. This can result in thread-divergence in \GPU, when parallelized over {\it points} and iterated over their {\it outnbrs} or {\it innbrs}.  
+
+Our goal in this work is to bridge the gap between easy DSL specification and versatility in generating various kinds of codes.
+Thus, from the same Falcon specification, we want to generate vertex-based or edge-based OpenMP or CUDA codes.
+
+
+

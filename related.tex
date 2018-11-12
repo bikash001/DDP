@@ -1,0 +1,119 @@
+\section{Related Work}\label{sec:related}
+We compare with the relevant literature, by dividing it based on the type of parallel processing: multi-core, GPUs-based, and distributed.
+
+\subsection{Multi-core CPU}
+Green-Marl~\cite{Hong:2012:GDE:2150976.2151013} is a graph DSL for 
+implementing parallel graph algorithms on multi-core CPUs using \texttt{OpenMP}.
+ %Green-Marl has separate  data types  {\tt DGraph} and   {\tt UGraph}  for directed and undirected graphs respectively. 
+It has two data types {\tt Node} and {\tt Edge} to represent vertices and edges in the graph respectively.
+\REM{
+ Green-Marl has three types of worklists data types namely {\tt Set}, {\tt Order} and {\tt Sequence}. These data types may contain a set of vertices in a graph. Elements in a {\tt Set} are unique but not ordered. Elements in an {\tt Order} are unique and ordered. Elements in a  {\tt Sequence} are ordered but not unique. 
+Green-Marl uses {\tt Foreach} construct for parallelism.
+
+ An example of a {\tt Foreach} statement is given below.\\
+
+{\tt Foreach} (v : G.Nodes) (cond) \{ ... \}\\
+Here all the vertices {\it v}  in the graph {\it G}  which satisfy the condition {\it cond} execute the body of the {\tt ForEach} statement. 
+There are iterators for vertices ({\tt Node}) in graph like {\tt nbrs} in Green-Marl.}
+ Green-Marl does not support mutation of the graph object
+(i.e., adding and removing vertices and edges to/from the graph object). So dynamic graph algorithms cannot be written in Green-Marl.
+LightHouse~\cite{lighthouse} added CUDA backend to Green-Marl.
+\REM{ Green-Marl supports only multi-core CPUs, and  graph algorithms targeting  \GPU devices cannot be programmed in Green-Marl.}
+Galois~\cite{Pingali:2011:TPA:1993316.1993501} is a C++ framework for implementing graph algorithms on multi-core CPUs. It supports mutation of graph objects via {\it cautious} speculative execution. 
+It uses a {\it worklist} based execution model, where all the {\it active elements} are pushed to a {\it worklist} and are processed in {\it ordered} or {\it unordered} fashion.
+\REM{Galois has a {\tt foreach} operator to process active elements in parallel. 
+The {\tt foreach} operator takes as argument an  {\it ordered} or {\it unordered} worklist.
+ During the processing of {\it active elements}, new {\it active elements} are created, which will be processed in the following rounds of computation. }
+Elixir~\cite{Prountzos:2012:ESS:2398857.2384644} is  a graph DSL to  develop and implement parallel graph algorithms for analyzing static (i.e., non-mutable) graphs and it targets multi-core CPUs.
+\REM{ Elixir uses both declarative and imperative  constructs for determining computations over a graph. }
+
+X-Stream~\cite{Roy:2013:XEG:2517349.2522740}  uses edge-centric processing for graph applications.
+\REM{ rather than using vertex centric processing for algorithms such as SSSP and Strongly Connected Component (SCC)}. 
+It supports both in-memory and out-of-core graph processing on a single shared-memory machine using scatter-gather execution model.
+The Stanford Network Analysis Platform (SNAP)~\cite{Leskovec:2016:SGN:2973184.2898361} provides high-level operations for large network analysis including social networks and target
+multi-core CPUs. 
+Ligra~\cite{Shun:2013:LLG:2517327.2442530} is a framework for writing graph traversal algorithms
+for multi-core shared memory systems. For vertex- versus edge-based processing, it uses two different routines: one for  mapping  vertices and the other for mapping  edges. However, the DSL code needs modification if one needs to alter the mapping.
+Polymer~\cite{Zhang:2015:NGA:2858788.2688507} is a NUMA aware graph framework for multi-core CPUs and it is built
+with a hierarchical barrier to get more parallelism and locality. 
+The GraphChi~\cite{Kyrola:2012:GLG:2387880.2387884} framework processes large graphs using a
+single machine, with the graph being split into  parts, called shards, and loading shards one by one into RAM and then processing each shard. 
+Such a framework is useful in the absence of distributed clusters.
+
+\subsection{\GPU devices}
+ Due to {\it irregularity} present in the graph algorithms  thread divergence can happen in \GPU.
+\REM{Writing an efficient \GPU program requires a deep knowledge of the \GPU architecture, so that the algorithm can be implemented with less thread divergence, fewer atomic operations, coalesced access etc.}
+Past research  has shown that graph algorithms perform well on GPUs and much better than multi-core \CPU  even in the presence of   the above mentioned limitations. 
+ The BFS implementation from  Merrill~\cite{Merrill:2012:SGG:2370036.2145832} is  novel and efficient. 
+There have also been successful implementations of other local computation algorithms such as 
+betweenness centrality~\cite{sariyuce13} and data flow analysis ~\cite{mendezlojo12}  on \GPU.
+Different ways of writing SSSP programs (such as delta-stepping~\cite{meyer03}) on
+\GPU along with their merits and demerits have been explored in~\cite{DAVIDSON2014} and it  concludes that worklist-based implementation will
+not benefit much on \GPU compared to that on a \CPU.
+
+The Lonestar-GPU~\cite{nasre13:MAG:2517327.2442531} framework supports mutation of graph objects and implementation of cautious morph algorithms on \GPU.
+It has cautious morph implementations  of algorithms like  Delaunay Mesh Refinement, Survey Propagation and  Points-to-Analysis. 
+\REM{ Lonestar-GPU does not provide any API based programming style for GPUs and it does not support execution of an algorithm  on   multiple GPUs by graph partitioning or running different algorithms at the same time.}
+ Medusa~\cite{medusa2014} is a  programming framework for graph algorithms on GPUs and multi-GPU devices. 
+It provides a set of  APIs and a run time system to program graph algorithms targeting GPU devices.
+The programmer is required  to write only  sequential {\it C++} code with these APIs. 
+\REM{Medusa provides APIs  for  processing vertices, edges or messages on GPUs.
+A programmer can implement an algorithm using these APIs.}
+ APIs on vertices and edges can also send messages to neighboring vertices.
+The Gunrock~\cite{Wang:2016:GHG:3016078.2851145} framework provides  a data-centric abstraction for graph operations at
+a higher level which makes programming  graph algorithms easy.
+Gunrock has  a set of  APIs to  express a  wide range of graph processing primitives.
+Gunrock also has some  GPU-specific optimizations.
+\REM{It defines {\it frontiers} as a subset of edges and  vertices of the graph  which are actively involved in the computation.
+Gunrock defines {\it advance}, {\it filter}, and {\it compute} primitives which operate on {\it frontiers} in different ways.}
+In Gunrock, programs can be specified as a series of bulk-synchronous steps. 
+\REM{Gunrock also looks at GPU specific optimizations such as kernel fusion.
+Gunrock provides load balance on irregular graphs where the {\it degree} of the vertices in the {\it frontier} can vary a lot.
+This variance is very high in graphs which follow power-law distribution.}
+Totem~\cite{Gharaibeh:2012:YOT:2370816.2370866,Gharaibeh:2013:ECG:2535753.2535755} is a heterogeneous framework for graph processing on a single machine.  It supports using a multi-core CPU and multiple GPUs on a single machine.
+\REM{When multiple devices are used for computation, the graph is partitioned and stored in the devices used for computation.}
+Totem follows the Bulk Synchronous Parallel~\cite{Valiant:1990:BMP:79173.79181} model of execution.
+\REM{Computation happens in a series of supersteps called {\it computation}, {\it communication} and {\it synchronization}.
+ It  supports large-scale graph processing on a single machine.}
+IrGL~\cite{Pai:2016:CTO:2983990.2984015} implements three optimizations named {\it iteration outlining}, {\it cooperative conversion} and
+ parallel execution of nested  loops. IrGL is an intermediate code representation, on which these optimizations are applied and the CUDA code is generated from it. \REM{ {\it Iteration outlining}  moves the 
+iterative loop from the {\it host} code  to the {\it device} code and this eliminates the performance bottleneck associated with multiple kernel calls in an iterative loop. 
+  {\it Cooperative conversion} reduces the total number of  atomic operations  by aggregating functions over thread, warp and thread-block level.\par}
+Farzad et al.~\cite{Farzad2016} propose warp segmentation to improve  GPU  utilization by
+dynamically assigning appropriate number of threads to process a vertex.
+GasCL (Gather-Apply-Scatter with OpenCL)~\cite{GasCL2013}  is a graph processing framework  built on top of
+OpenCL which works  on several  accelerators and supports parallel work distribution and message passing.
+The  MapGraph~\cite{Fu:2014:MHL:2621934.2621936}  framework  provides  high-level APIs, making it easy  to write graph programs and obtain good  speedups on GPUs.
+ Halide~\cite{Ragan-Kelley:2013:HLC:2491956.2462176} is a programming model for image processing on CPUs and GPUs.
+ An online profiling based method~\cite{Kaleem:2014:AHS:2628071.2628088} partitions work and distributes it across CPU and GPU.
+CuSha~\cite{Khorasani:2014:CVG:2600212.2600227}  proposes two new ways of storing graphs on GPU called G-Shards and Concatenated Windows,  that have improved regular memory access patterns.
+OpenMP to GPGPU~\cite{Lee:2009:OGC:1594835.1504194} is a framework for automatic code generation
+for GPU from OpenMP CPU code. There is no support from the CUDA compiler to have a barrier for the all threads in a {\it kernel} blocks. Such a feature is needed in some {\it cautious} morph algorithm (e.g, DMR). 
+A barrier for all the threads in a {\it kernel} can be  implemented in software, by launching the {\it kernel} with less number of threads and 
+ with the help of {\it atomic} operations provided by CUDA, and  each thread processes a set of elements.
+ Such an implementation can be found in~\cite{Feng5470477}. 
+\subsection{Distributed Systems}
+Natural graphs have very big sizes. Such large-scale graphs are sparse and follow the power-law degree distribution. Such graphs are
+ processed on a computer cluster.  Programming for a computer cluster requires learning the MPI library and explicit communication code
+has to be inserted in the program, with proper synchronizations to preserve sequential consistency. To achieve good performance
+there should be work balance across machines in the cluster and communication overhead should be minimum. Also the graph  should be
+partitioned across machines with less storage overhead.
+GraphLab~\cite{Low:2012:DGF:2212351.2212354}, PowerGraph~\cite{Gonzalez:2012:PDG:2387880.2387883} and Pregel~\cite{Malewicz:2010:PSL:1807167.1807184}  are popular distributed graph analytics framework.
+ Bulk Synchronous Parallel (BSP) Model  \cite{Valiant:1990:BMP:79173.79181} of execution and asynchronous executions are popular models of executions.
+Giraph~\cite{Ching:2015:OTE:2824032.2824077} is an  open source framework written in {\it Java} which is  based  on the Pregel model and runs on the  Hadoop infrastructure.
+ GPS (Graph Processing System)~\cite{Salihoglu:2013:GGP:2484838.2484843} is an open source
+framework and follows the execution of model of Pregel. 
+Green-Marl compiler was extended to CPU-clusters~\cite{Hong:2014:SSG:2581122.2544162}  and
+it generates GPS based Pregel like code.
+ Mizan~\cite{Khayyat:2013:MSD:2465351.2465369}  uses
+dynamic monitoring of algorithm execution, irrespective of graph
+input and does vertex migration at run time to balance computation and communication.
+Hadoop~\cite{White:2009:HDG:1717298}  follows the MapReduce() processing
+of graphs and uses the  Hadoop distributed file system (HDFS)
+for storing data.
+\REM{ HaLoop~\cite{Bu:2010:HEI:1920841.1920881} is a framework which follows
+MapReduce() pattern with support for iterative computation
+and with better caching and scheduling methods.}
+ Pregel like systems can outperform MapReduce() systems in graph analytic applications.
+Gluon~\cite{Dathathri:2018:GCS:3192366.3192404} uses Galois and Ligra and generates distributed-memory versions of these systems.
+ Gemini~\cite{Zhu:2016:GCD:3026877.3026901} is a distributed graph processing framework and provides abstractions for push-pull model of computation on distributed systems.
